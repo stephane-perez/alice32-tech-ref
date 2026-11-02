@@ -27,6 +27,7 @@ Périmètre : **Alice 32 uniquement** (pas le MC-10, l'Alice 4K ni l'Alice 90, s
 | [`docs/12-questions-ouvertes.md`](docs/12-questions-ouvertes.md) | Incertitudes, erreurs des sources, expériences à faire |
 | [`docs/13-programmation-jeux.md`](docs/13-programmation-jeux.md) | **Jeux rapides et démos** : budget cycles, techniques EF9345, idées |
 | [`exemples/squelette-jeu.asm`](exemples/squelette-jeu.asm) | Squelette DASM : init écran, caractère redéfini, déplacement, synchro trame |
+| [`exemples/demo/`](exemples/demo/README.md) | **Démo et programmes de test** : logo en tuiles avec défilement YOR fluide, plasma/dégradés, scrolltext, musique sous interruptions ; `.k7` prêts à charger |
 
 ## Convention de confiance
 
