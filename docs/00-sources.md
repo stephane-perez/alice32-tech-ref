@@ -31,6 +31,8 @@ Les chemins ci-dessous sont relatifs à l'archive `alice32.free.fr.zip` fournie 
 
 Documents du lot « documentation » **hors périmètre** (Alice d'origine à MC6847 ou autres machines) et donc non exploités : *Les Mystères d'Alice*, *Aller plus loin avec Alice*, document interne Matra, *Programmation en assembleur* (Alice d'origine).
 
+Crédits : les documents ont été scannés par **Daniel Coulom** et les contributeurs au site web (<http://alice32.free.fr/>).
+
 Crédits spéciaux : le site, l'émulateur DCAlice et la plupart des conversions sont l'œuvre de **Daniel Coulom**
 (<http://alice32.free.fr/>). Le contrôleur de disquette MCX32-FDJ et le Disk BASIC sont de **Darren Atkinson**.
 
