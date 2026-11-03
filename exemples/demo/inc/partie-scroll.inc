@@ -7,7 +7,9 @@
 ;                    ; 0 = taille normale (40 tuiles), si le double ne
 ;                    ;     s'affiche pas correctement sur l'émulateur
 ;    VITESSE EQU 2   ; points (de tuile) par image
-;  Nécessite partie-logo.inc (logo fixe en haut de l'écran).
+;  PARTIE3 n'est assemblée que si partie-logo.inc est inclus AVANT (logo
+;  fixe en haut de l'écran) ; sinon seul le moteur (S_INIT, S_AVANCE,
+;  S_ENVOI) est disponible, comme pour partie-combo.inc.
 ;
 ;  Principe (doc 13 §10 « Scrolltext horizontal ») : la rangée de texte
 ;  est faite de S_N caractères redéfinis consécutifs (codes 64…) ; leurs
@@ -30,6 +32,7 @@ S_B     EQU B_GP0
 S_CODE0 EQU 64               ; premier code des tuiles du texte
 S_Y     EQU 22               ; rangée mémoire du texte (rangée d'écran 14)
 
+        IFCONST L_TUILES
 PARTIE3 clra
         jsr  EFFACE
         ldaa #8
@@ -66,7 +69,25 @@ P3L     ldaa LM
         ldaa #$30            ; jaune sur noir
         ldab #4
         jsr  TEXTE
-; tuiles du texte vides, lignes en RAM à zéro
+        jsr  S_INIT
+; --- boucle d'image ---
+P3B     jsr  VSYNC
+        jsr  S_ENVOI         ; d'abord les tuiles (pendant le retour de trame)
+        jsr  S_CASES         ; couleurs qui tournent
+        jsr  S_BARRES        ; barres de dégradé au-dessus et au-dessous
+        REPEAT VITESSE
+        jsr  S_AVANCE
+        REPEND
+        inc  SPH
+        jsr  CONTROLE
+        bne  P3F
+        ldaa SFIN
+        beq  P3B
+P3F     rts
+        ENDIF
+
+; --- préparer le texte : tuiles vides, lignes en RAM à zéro, début du texte
+S_INIT
         ldaa #S_CODE0
         staa TMPC
 P3V     ldx  #TRAMES         ; 10 octets nuls
@@ -86,20 +107,7 @@ P3Z     clr  0,x
         clr  SCOLS
         clr  SFIN
         clr  SPH
-; --- boucle d'image ---
-P3B     jsr  VSYNC
-        jsr  S_ENVOI         ; d'abord les tuiles (pendant le retour de trame)
-        jsr  S_CASES         ; couleurs qui tournent
-        jsr  S_BARRES        ; barres de dégradé au-dessus et au-dessous
-        REPEAT VITESSE
-        jsr  S_AVANCE
-        REPEND
-        inc  SPH
-        jsr  CONTROLE
-        bne  P3F
-        ldaa SFIN
-        beq  P3B
-P3F     rts
+        rts
 
 ; --- décaler le texte d'un point -----------------------------------------
 S_AVANCE

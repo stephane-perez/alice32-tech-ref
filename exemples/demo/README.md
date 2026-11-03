@@ -15,6 +15,7 @@ Tous se chargent à **`$3400`** et se lancent par **`EXEC 13312`**. Ils tiennent
 | Programme | Contenu | Binaire | RAM utilisée |
 |---|---|---|---|
 | `demo` | les trois parties à la suite, en boucle (≈ 100 s), **avec musique** | 5 632 o | `$3400-$4D63` |
+| `demo2-plasma-scroll` | **effets combinés** : plasma plein écran, scrolltext par-dessus, musique | 4 864 o | `$3400-$4A63` |
 | `test1-logo` | logo « ALICE 32 » en tuiles, défilement vertical fluide par YOR | 2 048 o | `$3400-$3ED7` |
 | `test2-plasma` | dégradé diagonal (4 s) puis plasma (12 s) | 1 792 o | `$3400-$3DD7` |
 | `test3-scroll` | scrolltext au point près, double hauteur + double largeur | 4 352 o | `$3400-$4863` |
@@ -78,6 +79,15 @@ Taper ensuite `CLOADM`, lancer la cassette (menu de l'interface de MAME), puis `
 - Envoi : 5 tampons × 28 octets par OCT avec incrémentation (X = 4 × tranche + code & 3). Coût total : **12,5 ms par image**, couleurs et barres comprises.
 - Texte : **1 241 caractères** (`outils/gen_donnees.py`). Il occupe l'essentiel de la RAM restante de la démo : il reste ≈ 150 octets avant `$4E00`. Le programme refuse de s'assembler s'il déborde.
 
+### 4. Combinaison plasma + scrolltext + musique (`demo2-plasma-scroll`)
+
+![plasma + scrolltext](captures/4-plasma-scroll.png)
+
+- Le plasma entier coûte ≈ 49 ms, plus qu'une image ; le scrolltext doit être renvoyé à **chaque** image pour rester fluide. À chaque image on fait donc d'abord le scrolltext (≈ 5 ms), puis le plasma **par tranches de rangées** tant que le compteur du timer (`$09`, 1 µs) indique qu'il reste du temps : une rangée est commencée seulement avant 15,5 ms, le calcul des tables (`P_CALC`) seulement avant 13 ms (`inc/partie-combo.inc`). Le programme s'adapte ainsi à la vitesse réelle de la machine.
+- Résultat dans le simulateur : **aucune image perdue** (les 500 images de 10 s espacées de 20 ms), texte à 50 images/s, plasma à ≈ 10 images/s (≈ 4,6 rangées par image).
+- Les deux rangées du texte font partie du plasma : chaque case garde son code de tuile de texte, prend pour fond la couleur du plasma à cet endroit, et une couleur de texte qui contraste (table `CONTR`).
+- Si l'image saute sur la vraie machine (commandes plus lentes que dans le simulateur), baisser `C_LIM_RANG` et `C_LIM_CALC`.
+
 ### Musique non bloquante (doc 05 §2 et §4, doc 13 §5)
 
 - **OCF** (trampoline `$3206`) : à chaque échéance on inverse le bit 7 de `$BFFF` et on ajoute la demi-période de la note au registre de comparaison (`OCR += demi-période`) : la hauteur est exacte quelle que soit la latence (A4 mesuré à 439,4 Hz dans le simulateur). Coût ≈ 60 cycles par inversion, soit 5 % du processeur à 440 Hz.
@@ -121,6 +131,7 @@ Il produit des captures PNG aux instants demandés (en secondes), simule des app
 | `inc/commun.inc` | constantes, EF9345 (attente, IND, CLF, texte, caractères redéfinis, OCT), palette, clavier, horloge, démarrage et retour au BASIC |
 | `inc/musique.inc` | interruptions OCF/TOF, lecteur de partition |
 | `inc/partie-logo.inc`, `partie-plasma.inc`, `partie-scroll.inc` | les trois parties |
+| `inc/partie-combo.inc` | plasma + scrolltext dans la même image (`demo2-plasma-scroll`) |
 | `inc/fin.inc` | table de sinus alignée, zones de travail, contrôle de la taille |
 | `inc/donnees-*.inc` | **générés** par `outils/gen_donnees.py` |
 | `outils/` | générateur de données, assembleur, simulateur, `bin2k7.py` |

@@ -140,7 +140,15 @@ PC7     ldab SINUS
 ; --- dessin des 24 rangées ---------------------------------------------
 P_DESSINE
         clr  PY
-PD1     ldab PY
+PD1     jsr  P_RANG
+        inc  PY
+        ldaa PY
+        cmpa #24
+        bne  PD1
+        rts
+
+; --- dessin de la rangée PY (0-23) ------------------------------------
+P_RANG  ldab PY
         ldx  #RBV
         abx
         ldaa 0,x
@@ -181,12 +189,7 @@ XX      SET XX+1
         dec  PCPT
         beq  PD3
         jmp  PD2
-PD3     inc  PY
-        ldaa PY
-        cmpa #24
-        beq  PD4
-        jmp  PD1
-PD4     rts
+PD3     rts
 
 TITRE2  dc.b " ALICE 32 DEMO - 2/3 : PLASMA/DEGRADES",0
 
