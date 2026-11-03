@@ -16,6 +16,7 @@ Tous se chargent à **`$3400`** et se lancent par **`EXEC 13312`**. Ils tiennent
 |---|---|---|---|
 | `demo` | les trois parties à la suite, en boucle (≈ 100 s), **avec musique** | 5 632 o | `$3400-$4D63` |
 | `demo2-plasma-scroll` | **effets combinés** : plasma plein écran, scrolltext par-dessus, musique | 4 864 o | `$3400-$4A63` |
+| `demo3-vectoriel` | **3D fil de fer** en mode HIRES 160 × 125 (80 colonnes mosaïque) : cube, puis vaisseau | 2 816 o | `$3400-$4D1F` |
 | `test1-logo` | logo « ALICE 32 » en tuiles, défilement vertical fluide par YOR | 2 048 o | `$3400-$3ED7` |
 | `test2-plasma` | dégradé diagonal (4 s) puis plasma (12 s) | 1 792 o | `$3400-$3DD7` |
 | `test3-scroll` | scrolltext au point près, double hauteur + double largeur | 4 352 o | `$3400-$4863` |
@@ -88,6 +89,25 @@ Taper ensuite `CLOADM`, lancer la cassette (menu de l'interface de MAME), puis `
 - Les deux rangées du texte font partie du plasma : chaque case garde son code de tuile de texte, prend pour fond la couleur du plasma à cet endroit, et une couleur de texte qui contraste (table `CONTR`).
 - Si l'image saute sur la vraie machine (commandes plus lentes que dans le simulateur), baisser `C_LIM_RANG` et `C_LIM_CALC`.
 
+### 5. 3D fil de fer en 160 × 125 (`demo3-vectoriel`)
+
+| Cube (vert) | Vaisseau (blanc) |
+|---|---|
+| ![cube](captures/5a-cube.png) | ![vaisseau](captures/5b-vaisseau.png) |
+
+- **Mode** : 80 colonnes ; une cellule de 6 × 10 pixels dont le code C a le bit 7 à 1 est une **mosaïque** de 10 sous-blocs de 3 × 2 pixels. Cela donne 160 × 125 points presque carrés sur un téléviseur 4:3, en deux couleurs pour tout l'écran (DOR) ; le fond prend la couleur de la marge. Les bits de la mosaïque et l'adressage par KRL viennent de l'émulation EF9345 de MAME (`docs/04` §8.1, source S25).
+- **Méthode** :
+  - une copie en RAM de la fenêtre de 128 × 100 points, soit 64 cellules × 20 rangées à 2 octets par cellule ;
+  - à chaque image, on efface en RAM les cellules de l'image précédente, puis on trace les arêtes avec un Bresenham au point près, en notant chaque cellule nouvellement touchée ;
+  - on envoie ensuite chaque cellule concernée **une seule fois**, avec son contenu final : les traits ne clignotent pas.
+- **3D** : trois rotations par des multiplications signées 8 × 8 (instruction `MUL`), et une perspective par une table 1/z (`donnees-persp.inc`). Les objets sont décrits en tête de `inc/vecteur.inc` : sommets, arêtes, couleur, vitesses de rotation. On peut en ajouter, dans un rayon de 60.
+- **Mesures dans le simulateur** :
+  - **≈ 10 images/s** ;
+  - environ 330 points et 300 cellules envoyées par image ;
+  - à chaque image, l'écran est resté identique à la copie en RAM sur 327 images, changements d'objet compris.
+- Le cube et le vaisseau alternent toutes les 12 s ; ESPACE change d'objet. ENTRÉE rend la main au BASIC, en 40 colonnes.
+- **Ce n'est pas une Vectrex** : la Vectrex trace des traits continus au faisceau. Ici les traits sont faits de gros points. On retrouve l'esprit (fil de fer lumineux sur fond noir), pas la finesse.
+
 ### Musique non bloquante (doc 05 §2 et §4, doc 13 §5)
 
 - **OCF** (trampoline `$3206`) : à chaque échéance on inverse le bit 7 de `$BFFF` et on ajoute la demi-période de la note au registre de comparaison (`OCR += demi-période`) : la hauteur est exacte quelle que soit la latence (A4 mesuré à 439,4 Hz dans le simulateur). Coût ≈ 60 cycles par inversion, soit 5 % du processeur à 440 Hz.
@@ -131,6 +151,7 @@ Il produit des captures PNG aux instants demandés (en secondes), simule des app
 | `inc/commun.inc` | constantes, EF9345 (attente, IND, CLF, texte, caractères redéfinis, OCT), palette, clavier, horloge, démarrage et retour au BASIC |
 | `inc/musique.inc` | interruptions OCF/TOF, lecteur de partition |
 | `inc/partie-logo.inc`, `partie-plasma.inc`, `partie-scroll.inc` | les trois parties |
+| `inc/vecteur.inc` | 3D fil de fer en 160 × 125 : copie d'écran, tracé de segments, rotations, envoi par KRL, objets (`demo3-vectoriel`) |
 | `inc/partie-combo.inc` | plasma + scrolltext dans la même image (`demo2-plasma-scroll`) |
 | `inc/fin.inc` | table de sinus alignée, zones de travail, contrôle de la taille |
 | `inc/donnees-*.inc` | **générés** par `outils/gen_donnees.py` |
@@ -140,4 +161,4 @@ Il produit des captures PNG aux instants demandés (en secondes), simule des app
 
 ## Questions que ces tests peuvent trancher
 
-En lien avec [`docs/12-questions-ouvertes.md`](../../docs/12-questions-ouvertes.md) : **V2** (changement de ROR et défilement fin), **V3** (fenêtre de retour de trame, bit 2 de R0), **V1** (débit de KRF/OCT, via la fluidité du plasma et du scrolltext), **E2/E4/E5** (son sous interruptions, partage clavier/son), ainsi que l'incrémentation de X par OCT dans un tampon de caractères redéfinis et la double hauteur + double largeur sur des caractères de G'0.
+En lien avec [`docs/12-questions-ouvertes.md`](../../docs/12-questions-ouvertes.md) : **V9** (mosaïque 80 colonnes, avec `demo3-vectoriel`), **V2** (changement de ROR et défilement fin), **V3** (fenêtre de retour de trame, bit 2 de R0), **V1** (débit de KRF/OCT, via la fluidité du plasma et du scrolltext), **E2/E4/E5** (son sous interruptions, partage clavier/son), ainsi que l'incrémentation de X par OCT dans un tampon de caractères redéfinis et la double hauteur + double largeur sur des caractères de G'0.

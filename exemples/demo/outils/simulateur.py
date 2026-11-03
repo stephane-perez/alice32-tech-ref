@@ -96,6 +96,23 @@ class EF9345:
                     self.blk[z][y][x] = self.r[1]
                 if c & 1:
                     self.r[7] = (self.r[7] & 0xC0) | ((x + 1) % 40)
+        elif c in (0x50, 0x51):                     # KRL écriture (80 colonnes)
+            r6, r7 = self.r[6], self.r[7]
+            z = ((r6 >> 6) & 1) * 8 + ((r6 >> 5) & 1) * 4 + ((r7 >> 6) & 1) * 2
+            y, x, par = r6 & 31, r7 & 63, r7 >> 7
+            if x < 40:
+                self.blk[(z + 2 * par) & 15][y][x] = self.r[1]
+                b = self.blk[(z + 4) & 15][y]
+                if par:
+                    b[x] = (b[x] & 0xF0) | (self.r[3] & 0x0F)
+                else:
+                    b[x] = (b[x] & 0x0F) | (self.r[3] & 0xF0)
+            if c & 1:
+                if par:
+                    self.r[7] = (r7 & 0x40) | ((x + 1) % 40)
+                else:
+                    self.r[7] = r7 | 0x80
+            t = 13
         elif 0x80 <= c <= 0x87:                     # IND écriture
             n = c & 7
             v = self.r[1]
@@ -124,14 +141,61 @@ class EF9345:
             self.sim.log("EF9345 : commande non simulée $%02X" % c)
         self.busy_until = self.sim.cycles + t
 
-    def inass(self):
+    def inass(self, tecran=1):
+        if tecran == 0:                             # 80 colonnes (mode HIRES)
+            self.tgs, self.mat, self.pat, self.dor, self.ror = 0xD0, 0x28, 0x67, 0xFA, 0x08
+            for y in range(32):
+                self.blk[0][y] = [0x20] * 40
+                self.blk[2][y] = [0x20] * 40
+                self.blk[4][y] = [0x00] * 40
+            return
         self.tgs, self.mat, self.pat, self.dor, self.ror = 0x10, 0x28, 0x67, 0x13, 0x08
         for k, val in enumerate((0x20, 0x00, 0x70)):
             for y in range(32):
                 self.blk[k][y] = [val] * 40
 
     # ---- affichage ----
+    def image80(self, police):
+        """80 colonnes, format long : C pair (bloc 0), C impair (bloc 2),
+        quartets A (bloc 4 : haut = pair, bas = impair) ; mosaïque si C7 = 1
+        (d'après l'émulation EF9345 de MAME)."""
+        from PIL import Image
+        W, H, M = 480, 250, 24
+        pal = [((c & 1) * 255, ((c >> 1) & 1) * 255, ((c >> 2) & 1) * 255) for c in range(8)]
+        img = Image.new('RGB', (W + 2 * M, H + 2 * M), pal[self.mat & 7])
+        px = img.load()
+        yor = self.ror & 31
+        rangs = [0] + [8 + ((yor - 8 + s) % 24) for s in range(24)]
+        for s, y in enumerate(rangs):
+            if s == 0 and not self.pat & 1:
+                continue
+            for col in range(80):
+                x, par = col >> 1, col & 1
+                c = self.blk[2 * par][y][x]
+                ab = self.blk[4][y][x]
+                a = (ab & 0x0F) if par else (ab >> 4)
+                fg = (self.dor >> (4 if a & 1 else 0)) & 7
+                bg = self.mat & 7
+                for ligne in range(10):
+                    for p in range(6):
+                        if c & 0x80:
+                            w = (c & 0x7F) | (((a >> 1) & 7) << 7)
+                            on = (w >> (2 * (ligne // 2) + (p // 3))) & 1
+                            f, b = fg, bg
+                        else:
+                            g = police.get(c & 0x7F)
+                            on = 0
+                            if g and 1 <= ligne <= 7 and p < 5:
+                                on = (g[ligne - 1] >> p) & 1
+                            f, b = (bg, fg) if a & 8 else (fg, bg)
+                        px[M + col * 6 + p, M + s * 10 + ligne] = pal[f if on else b]
+        # 480 pixels x 250 lignes sur un écran 4:3 : on rend la proportion réelle
+        larg = (W + 2 * M) * 2
+        return img.resize((larg, larg * 3 // 4), Image.NEAREST)
+
     def image(self, police):
+        if self.tgs & 0xC0 == 0xC0:
+            return self.image80(police)
         from PIL import Image
         W, H, M = 320, 250, 16
         img = Image.new('RGB', (W + 2 * M, H + 2 * M))
@@ -398,7 +462,7 @@ class Sim:
 
     def step(self):
         if self.PC == 0xD42C:
-            self.ef.inass()
+            self.ef.inass(self.m[0x301A])
         if self.PC == 0xFFF0:
             self.fini = True
             return

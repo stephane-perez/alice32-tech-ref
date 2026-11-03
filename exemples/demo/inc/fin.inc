@@ -7,6 +7,9 @@
 FINPROG                      ; fin du binaire chargé
 
 ; --- zones de travail après le programme (rien n'est chargé ici) ---------
+        IFCONST SANS_PALETTE
+FINRAM  EQU V_FINRAM              ; zones définies par le programme (vecteur.inc)
+        ELSE
 TABC    EQU [FINPROG+255]&$FF00   ; palette : codes des tuiles (alignée)
 TABA    EQU TABC+256              ; palette : attributs (alignée)
 LBUF    EQU TABA+256              ; 80 octets : une rangée du logo
@@ -18,6 +21,7 @@ SLIG    EQU LTB+40                ; 7 x S_N octets : lignes du scrolltext
 FINRAM  EQU SLIG+7*S_N
         ELSE
 FINRAM  EQU SLIG
+        ENDIF
         ENDIF
 
         ECHO "Binaire : $3400 -", FINPROG, " ; RAM utilisée jusqu'à", FINRAM

@@ -6,6 +6,8 @@
 ;
 ;  Le programme principal doit définir AVANT l'inclusion :
 ;    AVEC_MUSIQUE  EQU 0 ou 1
+;  et peut définir SANS_PALETTE (palette de dégradés et BARRE omises,
+;  pour les programmes en 80 colonnes qui ont besoin de la RAM).
 ; =====================================================================
 
 ; --- EF9345 ($BF20-$BF2F) --------------------------------------------
@@ -196,6 +198,7 @@ OS2     tst  R0
         bne  OS1
         rts
 
+        IFNCONST SANS_PALETTE
 ; =====================================================================
 ;  Palette de dégradés : 256 teintes cycliques.
 ;  v = 16 x segment + 4 x niveau + (0-3) ;
@@ -277,6 +280,8 @@ BA4     tst  R0
         bne  BA1
         rts
 
+        ENDIF
+
 ; =====================================================================
 ;  Clavier en lecture directe : ESPACE (colonne 7, ligne 3) et ENTRÉE
 ;  (colonne 6, ligne 3). Retourne A = 1 (ESPACE), 2 (ENTRÉE) ou 0, une
@@ -337,7 +342,9 @@ DEMARRE sts  SAVESP
         staa SAVECC
         sei
         jsr  INITECRAN
+        IFNCONST SANS_PALETTE
         jsr  INITPAL
+        ENDIF
         jsr  HORLOGE
         jmp  PRINCIPAL
 

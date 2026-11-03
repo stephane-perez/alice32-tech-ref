@@ -100,6 +100,13 @@ Une cellule quadrichrome (B = `$C0` + …) affiche **4 couleurs choisies parmi 8
 
 Le mode 80 colonnes « mosaïque » (`CLS 80`/`81`) donne des points de 3 × 2 pixels : **160 × 125 points, 2 couleurs pour tout l'écran** (C0 et C1 de DOR). Allumer un point demande de lire la cellule (KRL, 11,5 µs), modifier le bon bit et la réécrire (KRL, 12,5 µs) : environ **25-40 µs par point** avec les attentes **[B]**, soit 500-800 points par image. Bien adapté à des **tracés vectoriels simples** (quelques segments), pas à des fonds pleins. Pour du plein écran, préférer les tuiles.
 
+Mise en œuvre dans `exemples/demo/demo3-vectoriel` (cube et vaisseau en 3D fil de fer) **[B : mesuré dans le simulateur du dépôt, pas sur machine]** :
+- au lieu de lire et réécrire chaque point, on garde une **copie de la fenêtre en RAM** (2 octets par cellule) ; on y efface l'image précédente et on y trace la nouvelle (Bresenham au point près) ;
+- on envoie ensuite par KRL **une seule fois** chaque cellule touchée, avec son contenu final : aucun scintillement ;
+- pour environ 330 points et 300 cellules par image, cela donne **≈ 10 images/s**. Le temps se partage entre l'envoi des cellules (≈ 23 ms), la tenue des listes de cellules (≈ 30 ms), le tracé (≈ 35 ms) et les rotations (≈ 8 ms) ;
+- la correspondance des bits de la mosaïque est celle de l'émulation de MAME (`04` §8.1).
+- **Ce n'est pas une Vectrex** : la Vectrex trace de vrais traits continus au faisceau, sans pixels. Ici les traits sont faits de points de 3 × 2 pixels, en deux couleurs pour tout l'écran, et le fond est la couleur de la marge. Le style « fil de fer vert sur fond noir » est le même, le grain est celui d'un écran basse résolution.
+
 ## 4. Entrées
 
 - **Clavier / manette en un appel** : `JSR $F883` (POLCA) donne un code ASCII, mais **une seule touche à la fois** et il balaie toute la matrice à chaque appel ; pour un jeu de quelques touches (direction + tir) lire directement les colonnes concernées (`STAA $02` puis `LDAA $BFFF` : une dizaine de cycles par colonne) **[A, B]**.

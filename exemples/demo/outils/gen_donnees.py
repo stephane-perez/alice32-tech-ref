@@ -268,3 +268,13 @@ ecrit('donnees-musique.inc', mus)
 
 print("logo : %d colonnes ; police : %d octets ; texte : %d caractères ; "
       "mélodie : %d octets" % (larg, len(police), len(txt), len(melodie)))
+
+# ---------------------------------------------------------------------------
+# 6. Perspective du programme vectoriel : PERSP[z + 128] = 150 x 300 / (300 + z)
+#    (facteur d'échelle sur 256 : x écran = x x PERSP / 256), plafonné à 255.
+# ---------------------------------------------------------------------------
+persp = [min(255, int(round(150 * 300 / (300 + z)))) for z in range(-128, 128)]
+ecrit('donnees-persp.inc', ENTETE +
+      "; Perspective : PERSP[z + 128] = 150 x 300 / (300 + z), z = -128..127.\n" +
+      octets('PERSP', persp))
+print("perspective : %d à %d" % (persp[128 - 60], persp[128 + 60]))

@@ -295,9 +295,45 @@ Avec les jeux G'10, G'11 et G'0 on dispose de **300 caractères bichromes** red�
 - Cellule 6 × 10 points ; deux formats : **long 12 bits** (octet C + quartet A de 4 attributs) et court 8 bits (C seul, aucun attribut) ; les deux utilisent G0 (128 caractères 6 × 10).
 - **Attributs du quartet A** (format long) : bit 0 **D** (sélection de couleur : choisit entre C0 et C1 de DOR), bit 1 **U** souligné, bit 2 **F** clignotant, bit 3 **N** négatif. Court : tous à 0.
 - **Mosaïque** (C7 = 1) : 10 bits (A3-A1 et C6-C0) commandent chacun un sous-bloc de **3 points × 2 lignes** de la cellule : 2 colonnes × 5 rangées = **160 × 125 points** en 80 × 25 (la ROM adresse les points par `(X div 2, Y div 5)`) **[A + B]**. C'est le mode HIRES du BASIC (`CLS 80`/`81`, `SET`/`RESET`/`POINT` à l'échelle 160 × 125) ; couleur : 2 couleurs seulement pour tout l'écran (C0, C1 de DOR).
-- **DOR en 80 colonnes** : bits 7-4 = couleur C1 (bit 7 = insertion), bits 3-0 = couleur C0 (bit 3 = insertion) ; l'attribut D choisit la paire (fond / premier plan), N les échange ; la ROM utilise `$FA` (C0 = vert, C1 = blanc) et `$AF` (l'inverse). Détail de la combinaison D/N : figure 33 de la fiche **[B, à relire sur l'image]**.
-- Codage mémoire : deux caractères consécutifs sont regroupés en **3 octets** (C pair, C impair, et deux quartets A) ; X sur 80 positions se transforme en pointeur R7 par une rotation à droite de la position (voir figure 32 de la fiche) ; accès par **KRL** (`$50`/`$58`) : **le quartet A doit être répété dans R3 (haut et bas)** pour que l'écriture « lecture-modification-écriture » de A soit correcte ; la ROM le fait (« l'attribut doit être répété 2 fois dans l'octet »).
+- **DOR en 80 colonnes** : bits 7-4 = couleur C1 (bit 7 = insertion), bits 3-0 = couleur C0 (bit 3 = insertion) ; l'attribut D choisit la paire (fond / premier plan), N les échange ; la ROM utilise `$FA` (C0 = vert, C1 = blanc) et `$AF` (l'inverse). Détail de la combinaison D/N : figure 33 de la fiche **[B, à relire sur l'image]** ; comportement émulé par MAME : §8.1.
+- Codage mémoire : deux caractères consécutifs sont regroupés en **3 octets** (C pair, C impair, et deux quartets A) ; X sur 80 positions se transforme en pointeur R7 par une rotation à droite de la position (voir figure 32 de la fiche, et §8.1) ; accès par **KRL** (`$50`/`$58`) : **le quartet A doit être répété dans R3 (haut et bas)** pour que l'écriture « lecture-modification-écriture » de A soit correcte ; la ROM le fait (« l'attribut doit être répété 2 fois dans l'octet »).
 - Pas de jeux utilisateur (UDS) en 80 colonnes.
+
+### 8.1 Détails relevés dans l'émulation de MAME [B, S25]
+
+Le code d'émulation de l'EF9345 de MAME (S25), dérivé de celui de DCAlice, précise les points que la fiche laisse sur des figures. C'est le comportement **émulé** : à confirmer sur une vraie Alice (`12-questions-ouvertes.md`, V9).
+
+**Mosaïque (C7 = 1, 80 colonnes).** La cellule de 6 × 10 pixels est découpée en 5 bandes de 2 lignes, chacune coupée en une moitié gauche et une moitié droite de 3 pixels. Le mot de 10 bits w = C6-C0 suivis de A1-A3 (w0 = C0 … w6 = C6, w7 = A1, w8 = A2, w9 = A3) se lit ainsi :
+
+| Bande (lignes) | Moitié gauche | Moitié droite |
+|---|---|---|
+| 0 (lignes 0-1) | C0 | C1 |
+| 1 (lignes 2-3) | C2 | C3 |
+| 2 (lignes 4-5) | C4 | C5 |
+| 3 (lignes 6-7) | C6 | A1 |
+| 4 (lignes 8-9) | A2 | A3 |
+
+Soit : bit n du mot = bande n ÷ 2, moitié gauche si n est pair. Un point (x, y) de l'écran 160 × 125 est donc la cellule (x ÷ 2, y ÷ 5), bit 2 × (y mod 5) + (x mod 2).
+
+**Couleurs.**
+- Couleur d'un point allumé : `(DOR >> 4) & 7` si l'attribut D (A0) vaut 1, sinon `DOR & 7`. Avec `DOR = $FA` (valeur de la ROM) : vert si D = 0, blanc si D = 1.
+- Couleur d'un point éteint : **la couleur de la marge** (`MAT & 7`).
+- En mosaïque, A3 est un bit de dessin : il n'y a pas d'inversion (N) ni de soulignement.
+- Pour les caractères ordinaires, A3 (N) échange les deux couleurs, A1 souligne, A2 fait clignoter.
+
+**Rangement en mémoire et KRL.**
+- Pour une paire de colonnes (2k, 2k + 1) d'une rangée :
+  - le code C de la colonne paire est à l'adresse de la page ;
+  - le code C de la colonne impaire est à `+$0800`, soit deux blocs plus loin ;
+  - l'octet des attributs est à `+$1000`, soit quatre blocs plus loin, avec le quartet de la colonne paire en haut et celui de la colonne impaire en bas.
+- Une page 80 colonnes occupe donc les blocs 0, 2 et 4 quand elle commence au bloc 0.
+- Pointeur : **R7 = colonne ÷ 2, et la parité de la colonne dans le bit 7** : c'est la « rotation à droite » de la fiche.
+- KRL écriture (`$50`/`$51`) écrit R1 dans le code C. Il ne modifie que le quartet de la colonne visée dans l'octet d'attributs : le **haut** de R3 pour une colonne paire, le **bas** pour une colonne impaire. D'où la règle « répéter le quartet en haut et en bas de R3 ».
+- **Incrémentation (`$51`)** : après une colonne paire, le bit 7 de R7 passe à 1 et X ne bouge pas ; après une colonne impaire, le bit 7 revient à 0 et X avance. Des écritures successives parcourent donc les 80 colonnes, ce qui sert à afficher une chaîne.
+- Durée émulée : 12,5 µs.
+- Le code de MAME semble contenir une erreur dans la **lecture** KRL (`$58`/`$59`) : `R7 &= $80` y efface X au lieu du bit de parité. Ne pas déduire le comportement réel de la lecture de cet émulateur.
+
+Exemple d'utilisation : `exemples/demo/inc/vecteur.inc` (3D fil de fer en 160 × 125).
 
 ## 9. Le timing
 

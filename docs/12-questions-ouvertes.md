@@ -13,6 +13,7 @@ Ce qui n'est **pas** établi, avec la manière de le trancher. Priorité : ce qu
 | V5 | Signification du **bit 3 du registre d'état** (MSB de R1 ?) | diagnostic | écrire R1 et lire R0 |
 | V6 | **Câblage de la sortie « I » (insert)** sur la carte : couleurs 8 à 15 | palette complète en 40 colonnes | schéma (S1) + essai |
 | V7 | Capacité exacte de la mémoire vidéo : **8 Ko**, confirmée par S20 ; les 8 blocs de 1 Ko sont-ils tous utilisables comme pages/jeux de caractères ? | voir `04-ef9345-video.md` | essai |
+| V9 | **Mosaïque 80 colonnes** : ordre des 10 bits (C0-C6, A1-A3 : bande par bande, gauche puis droite), fond = couleur de la marge, KRL avec incrémentation qui passe d'une colonne de 80 à la suivante : relevés dans MAME (S25, voir `04` §8.1), qui dérive de DCAlice | conditionne tout dessin en 160 × 125 | lancer `exemples/demo/demo3-vectoriel` sur une vraie machine, ou dessiner les 10 sous-blocs un à un |
 | V8 | Émulation : DCAlice utilise 30 cycles fixes par commande (S2) ; l'écart de MAME avec le matériel est inconnu | on ne peut pas régler un effet sur émulateur | comparer avec une vraie Alice |
 
 ## 2. Entrées, son, interruptions

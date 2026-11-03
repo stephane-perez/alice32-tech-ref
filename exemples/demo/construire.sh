@@ -7,7 +7,7 @@ set -e
 cd "$(dirname "$0")"
 mkdir -p build
 python3 outils/gen_donnees.py
-for p in demo demo2-plasma-scroll test1-logo test2-plasma test3-scroll test3b-scroll-simple test4-musique; do
+for p in demo demo2-plasma-scroll demo3-vectoriel test1-logo test2-plasma test3-scroll test3b-scroll-simple test4-musique; do
     if command -v dasm >/dev/null 2>&1; then
         dasm "$p.asm" -f3 -o"build/$p.bin" -l"build/$p.lst" -s"build/$p.sym"
     else
