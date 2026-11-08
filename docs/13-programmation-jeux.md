@@ -100,6 +100,13 @@ Une cellule quadrichrome (B = `$C0` + …) affiche **4 couleurs choisies parmi 8
 
 Le mode 80 colonnes « mosaïque » (`CLS 80`/`81`) donne des points de 3 × 2 pixels : **160 × 125 points, 2 couleurs pour tout l'écran** (C0 et C1 de DOR). Allumer un point demande de lire la cellule (KRL, 11,5 µs), modifier le bon bit et la réécrire (KRL, 12,5 µs) : environ **25-40 µs par point** avec les attentes **[B]**, soit 500-800 points par image. Bien adapté à des **tracés vectoriels simples** (quelques segments), pas à des fonds pleins. Pour du plein écran, préférer les tuiles.
 
+Mise en œuvre dans `exemples/demo/demo3-vectoriel` (cube et vaisseau en 3D fil de fer) **[B : mesuré dans le simulateur du dépôt, pas sur machine]** :
+- au lieu de lire et réécrire chaque point, on garde une **copie de la fenêtre en RAM** (2 octets par cellule) ; on y efface l'image précédente et on y trace la nouvelle (Bresenham au point près) ;
+- on envoie ensuite par KRL **une seule fois** chaque cellule touchée, avec son contenu final : aucun scintillement ;
+- pour environ 330 points et 300 cellules par image, cela donne **≈ 10 images/s**. Le temps se partage entre l'envoi des cellules (≈ 23 ms), la tenue des listes de cellules (≈ 30 ms), le tracé (≈ 35 ms) et les rotations (≈ 8 ms) ;
+- la correspondance des bits de la mosaïque est celle de l'émulation de MAME (`04` §8.1).
+- **Ce n'est pas une Vectrex** : la Vectrex trace de vrais traits continus au faisceau, sans pixels. Ici les traits sont faits de points de 3 × 2 pixels, en deux couleurs pour tout l'écran, et le fond est la couleur de la marge. Le style « fil de fer vert sur fond noir » est le même, le grain est celui d'un écran basse résolution.
+
 ## 4. Entrées
 
 - **Clavier / manette en un appel** : `JSR $F883` (POLCA) donne un code ASCII, mais **une seule touche à la fois** et il balaie toute la matrice à chaque appel ; pour un jeu de quelques touches (direction + tir) lire directement les colonnes concernées (`STAA $02` puis `LDAA $BFFF` : une dizaine de cycles par colonne) **[A, B]**.
@@ -161,4 +168,5 @@ Les mêmes leviers servent aux démos ; ce qui suit découle des capacités du c
 - **Scrolltext horizontal** : décalage de tuiles pré-calculées dans G'0 + MVT d'une rangée (§3.5) ; le texte se déplace au pixel près si l'on redéfinit les caractères de la rangée.
 - **Musique** : le son est 1 bit sur `$BFFF` ; pour jouer des notes pendant l'animation, faire alterner la fréquence à chaque passage de boucle ou depuis OCF (§5) ; deux voix demandent un mélange logiciel (`EORA` de deux signaux carrés) **[C]**.
 - **Contraintes à garder en tête** : 1 MHz, 20 000 cycles par image, une seule voix 1 bit, pas de sprite matériel, 8 Ko de mémoire vidéo ; l'économie vient du **matériel** de l'EF9345 (CLF, MVT, YOR, marges, attributs) plus que du processeur.
+- **Programmes de test du dépôt** : [`exemples/demo/`](../exemples/demo/README.md) met en œuvre le défilement YOR fluide avec une carte de tuiles, le plasma/dégradés par trames, le scrolltext au point près (OCT) et la musique par OCF/TOF ; vérifiés seulement dans un simulateur simplifié **[C]**.
 - **Où trouver des exemples** : *Tuiles curieuses* (tuiles, S8), les programmes de démonstration du catalogue (`11-catalogue-logiciels.md`), et le désassemblage/commentaire de la ROM (`06`).

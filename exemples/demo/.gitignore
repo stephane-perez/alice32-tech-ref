@@ -1,0 +1,4 @@
+build/*.lst
+build/*.sym
+build/*.wav
+__pycache__/

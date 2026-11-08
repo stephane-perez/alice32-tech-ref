@@ -28,6 +28,7 @@ Les chemins ci-dessous sont relatifs à l'archive `alice32.free.fr.zip` fournie 
 | S22 | *Guide d'instructions de l'éditeur-assembleur* (DjVu) | Matra-Hachette, 1984 | éditeur, directives, erreurs | OCR ; les lettres des commandes CTRL sont des images perdues |
 | S23 | Fiche technique MC6803E (DjVu) | Motorola | cycles, registres, vecteurs | OCR |
 | S24 | `documentation/schema_electrique_alice32_corrige.png` | Daniel Coulom | câblage | non redistribué ici |
+| S25 | `src/devices/video/ef9345.cpp` du projet MAME, <https://github.com/mamedev/mame/blob/master/src/devices/video/ef9345.cpp> (branche `master`, consulté le 3 novembre 2026) | Daniel Coulom, Sandro Ronco (licence GPL-2.0+) ; variante TS9347 de Jean-François Del Nero | 80 colonnes : bits de la mosaïque, couleurs, adressage et incrémentation de KRL, rangement en mémoire | **hors de l'archive** ; code d'émulateur, pas une mesure sur le matériel ; d'après son en-tête, il est **dérivé de l'émulation de DCVG5k et DCAlice** (S2) : ce n'est donc pas une source indépendante de DCAlice ; lu, non recopié |
 
 Documents du lot « documentation » **hors périmètre** (Alice d'origine à MC6847 ou autres machines) et donc non exploités : *Les Mystères d'Alice*, *Aller plus loin avec Alice*, document interne Matra, *Programmation en assembleur* (Alice d'origine).
 
@@ -47,4 +48,5 @@ Crédits spéciaux : le site, l'émulateur DCAlice et la plupart des conversions
 - Référence principale : le **source commenté de la ROM (S19)**, dont l'assemblage avec DASM redonne `alice32.rom` octet pour octet. Les adresses, constantes et rôles de routines viennent de lui.
 - Les codes de commande de l'EF9345 ont été lus visuellement sur les images de la fiche (S17) et recoupés avec les constantes de la ROM.
 - Les OCR (DjVu → `ddjvu` + `tesseract`) comportent des erreurs : les valeurs critiques ont été relues sur l'image ou recoupées avec la ROM ; les cas non tranchés sont dans `12-questions-ouvertes.md`.
+- Le comportement de l'émulateur MAME (S25) est cité **[B, S25]** : c'est ce que fait l'émulation, à confirmer sur une vraie machine.
 - Rien n'a été exécuté sur machine réelle ni sous émulateur.
