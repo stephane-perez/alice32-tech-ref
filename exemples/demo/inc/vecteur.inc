@@ -470,37 +470,6 @@ YP4     ldaa #4              ; bande 0 -> bande 4 de la rangée précédente
         ldx  V_E
         jmp  FRAIS
 
-; =====================================================================
-;  Texte en 80 colonnes : X = chaîne, B = colonne (0-79), TXY = rangée,
-;  A = quartet d'attribut (bit 0 : couleur). KRL + incrémentation : le
-;  composant passe seul à la colonne suivante (parité dans le bit 7 de R7).
-; =====================================================================
-TEXTE80 psha
-        jsr  ATTEND
-        pula
-        staa TMPC
-        asla
-        asla
-        asla
-        asla
-        oraa TMPC
-        staa R3
-        lsrb
-        bcc  T81
-        orab #$80
-T81     stab R7
-        ldaa TXY
-        staa R6
-        ldaa #C_KRLI
-        staa R0
-T82     ldaa 0,x
-        beq  T8F
-        inx
-T83     tst  R0
-        bmi  T83
-        staa XR1
-        bra  T82
-T8F     rts
 
         INCLUDE "inc/math3d.inc"
 
